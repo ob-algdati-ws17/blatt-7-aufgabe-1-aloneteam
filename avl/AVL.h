@@ -1,5 +1,7 @@
 class AVL {
+
 #define calcBal(X) (X)->bal = static_cast<short>((X)->right == nullptr ? (X)->left == nullptr ? 0 : -1 : (X)->left == nullptr ? 1 : 0);
+#define max(X, Y)  ((X) > (Y) ? (X) : (Y))
 
 private:
     struct element {
@@ -9,8 +11,9 @@ private:
         element* parent;
         short bal;
 
+        element(int k, element* l, element* r, element* p) : key(k), left(l), right(r), parent(p), bal(0) {};
         element(int k, element* p) : key(k), left(nullptr), right(nullptr), parent(p), bal(0) {}; // konstruktor neues Blatt
-        element(int k) : key(k), left(nullptr), right(nullptr), parent(nullptr), bal(0) {}; // konstruktor, wenn erstes Element
+        explicit element(int k) : key(k), left(nullptr), right(nullptr), parent(nullptr), bal(0){}; // konstruktor, wenn erstes Element
     };
 
     element* root = nullptr;
@@ -75,8 +78,90 @@ private:
         }
     };
 
+    void upout(element *p) {
+
+        if(p == root) return;
+
+        element *pp = p->parent;
+
+        if(p->bal != 0) {
+            std::cout << "Element (bal) ist nicht 0. " << p->bal << "," << p->key << std::endl;
+            return;
+        }
+
+        bool isLeft = pp->left == p;
+        element *q = isLeft ? pp->right : pp->left;
+
+        if(isLeft) {
+            if(pp->bal == -1) {
+                pp->bal = 0;
+                upout(pp);
+                return;
+            }
+            if(pp->bal == 0) {
+                pp->bal = 1;
+                return;
+            }
+            //pp->bal = 1
+            if(q->bal == 0) {
+                L(pp);
+                pp->parent->bal = -1;
+                return;
+            }
+            if(q->bal == 1) {
+                L(pp);
+                pp->bal = 0;
+                pp->parent->bal = 0;
+                upout(pp->parent);
+                return;
+            }
+            //q->bal = -1
+            R(q);
+            L(pp);
+            element *ppp = pp->parent;
+            calcBal(pp);
+            ppp->bal = 0;
+            calcBal(ppp->right);
+            upout(ppp);
+            return;
+        }
+        else {
+            if(pp->bal == 1) {
+                pp->bal = 0;
+                upout(pp);
+                return;
+            }
+            if(pp->bal == 0) {
+                pp->bal = -1;
+                return;
+            }
+            //pp->bal = -1
+            if(q->bal == 0) {
+                R(pp);
+                pp->parent->bal = 1;
+                return;
+            }
+            if(q->bal == -1) {
+                R(pp);
+                pp->bal = 0;
+                pp->parent->bal = 0;
+                upout(pp->parent);
+                return;
+            }
+            //q->bal = -1
+            L(q);
+            R(pp);
+
+            element *ppp = pp->parent;
+            calcBal(pp);
+            ppp->bal = 0;
+            calcBal(ppp->left);
+            upout(ppp);
+            return;
+        }
+    }
+
     void L(element *e) {
-        std::cout << "Rotate L around " << e->key << std::endl;
         element *o = e->right;
         if(e == root) {
             root = o;
@@ -123,10 +208,10 @@ private:
         element *target = key < e->key ? e->left : e->right;
         if(target == nullptr) { // BLatt gefunden
             bool isLeft = key < e->key;
-            if(isLeft) e->left = new typename AVL::element(key, e);
-            else e->right = new typename AVL::element(key, e);
+            if(isLeft) e->left = new AVL::element(key, e);
+            else e->right = new AVL::element(key, e);
             if(e->bal == 0) {
-                e->bal = isLeft ? -1 : 1;
+                e->bal = static_cast<short>(isLeft ? -1 : 1);
                 upin(e);
                 return;
             }
@@ -134,13 +219,155 @@ private:
             return;
         }
         add(target, key);
-        return;
     };
+
+    element* getMin(element* e) {
+        return e->left == nullptr ? e : getMin(e->left);
+    };
+
+    void remove(element *e) {
+        // Was ist wenn e == root?
+        if(e->left != nullptr && e->right != nullptr) { // 2 Knoten
+            element *q = getMin(e->right);
+            element *n = new AVL::element(q->key, e->left, e->right, e->parent);
+            if(e != root)  e->parent->left == e ? e->parent->left : e->parent->right = n;
+            else root = n;
+            e->right->parent = n;
+            e->left->parent = n;
+            calcBal(n);
+            free(e);
+            remove(q);
+            return;
+        }
+        else if(e->left == nullptr && e->right == nullptr) { // 2 Blätter
+            if(e == root) {
+                root = nullptr;
+                free(e);
+                return;
+            }
+            element *p = e->parent;
+            bool isLeft = p->left == e;
+            if(isLeft) p->left = nullptr;
+            else p->right = nullptr;
+            free(e);
+            switch(countHeight(p)) {
+                case 1: {
+                    calcBal(p); // bal = [-1, 1]
+                    return;
+                }
+                case 0: {
+                    p->bal = 0;
+                    upout(p);
+                    return;
+                }
+                default: { // case 2
+                    if(isLeft) { // links wurde entfernt
+                        element *q = p->right;
+                        if (q->right == nullptr) { // case 2
+                            R(q);
+                            L(p);
+                            p->bal = 0;
+                            q->bal = 0;
+//                            p->parent->bal = 0;
+                            upout(p->parent); // stimmt p??? oder p->parent
+                            return;
+                        }
+                        if (q->left == nullptr) {
+                            L(p);
+                            q->bal = 0;
+                            p->bal = 0;
+                            upout(q);
+                            return;
+                        }
+                        L(p);
+                        p->bal = 1;
+                        q->bal = -1;
+                        return;
+                    }
+                    else { // Testen ob das so richtig ist
+                        element *q = p->left;
+                        if (q->left == nullptr) { // case 2
+                            L(q);
+                            R(p);
+                            p->bal = 0;
+                            q->bal = 0;
+//                            p->parent->bal = 0;
+                            upout(p->parent);
+                            return;
+                        }
+                        if (q->right == nullptr) {
+                            R(p);
+                            q->bal = 0;
+                            p->bal = 0;
+                            upout(q);
+                            return;
+                        }
+                        R(p);
+                        p->bal = -1;
+                        q->bal = 1;
+                        return;
+                    }
+                }
+            }
+        }
+        else {
+            if(e == root) {
+                root = root->left == nullptr ? root->right : root->left;
+                free(root->parent);
+                root->parent = nullptr;
+                return;
+            }
+            element *p = e->parent;
+            bool isLeftParent = p->left == e;
+            bool isLeftFollower = e->left != nullptr;
+            if(isLeftParent) p->left = isLeftFollower ? e->left : e->right;
+            else p->right = isLeftFollower ? e->left : e->right;
+            if(isLeftFollower) e->left->parent = p;
+            else e->right->parent = p;
+//            isLeftParent ? p->left : p->right = isLeftFollower ? e->left : e->right;
+//            isLeftFollower ? e->left->parent : e->right->parent = p;
+            free(e);
+            calcBal(p);
+            upout(p);
+        }
+
+    };
+
+    int countHeight(element* e) {
+        return max(e->left == nullptr ? 0 : countHeight(e->left) + 1, e->right == nullptr ? 0 : countHeight(e->right) + 1);
+    };
+
+    bool checkBalance(element* e) {
+        return e->bal == static_cast<short>((e->right == nullptr ? 0 : countHeight(e->right) + 1) - (e->left == nullptr ? 0 : countHeight(e->left) + 1)) &&
+               e->right == nullptr ? true : checkBalance(e->right) && e->left == nullptr ? true : checkBalance(e->left);
+    }
 
 
 public:
     ~AVL() {
+        while(!isEmpty()) {
+//            print();
+            remove(root);
+        }
+    };
 
+    element* getElement(const int line, const int elem) { // 2, 1
+
+        int elemnotconst = elem;
+        int numberofelemsinlastline = static_cast<int>(pow(2, line));// bei 0: 1
+
+        element *current = root;
+        for(int i = 0; i < line; i++) {
+            numberofelemsinlastline /= 2;
+            if(elemnotconst < numberofelemsinlastline) {
+                current = current->left;
+            }
+            else {
+                elemnotconst -= numberofelemsinlastline;
+                current = current->right;
+            }
+        }
+        return current;
     }
 
     void print() {
@@ -176,31 +403,34 @@ public:
         }
     };
 
-    element* search(const int key) {
-        if(root == nullptr) {
-            return nullptr;
-        }
-        element* next = root;
-
-        while(true) {
-            if(next == nullptr || next->key == key) {
-                return nullptr;
-            }
-            next = (next->key == key) ? next->left : next-> right;
-        }
+    bool isEmpty() {
+        return root == nullptr;
     }
 
+    bool checkBalance() {
+        if(root == nullptr) return true;
+        return checkBalance(root);
+    }
+
+    element* search(const int key) {
+        if(root == nullptr) return nullptr;
+        element *next = root;
+        for(element *current = next; next != nullptr && next->key != key; next = (next->key > key) ? next->left : next-> right) {}
+        return next;
+    };
+
     friend AVL &operator+=(AVL &a, int input) {
-//        std::cout << "Adding ... " << input << std::endl;
         if(a.root == nullptr) {
-            a.root = new typename AVL::element(input);
+            a.root = new AVL::element(input);
             return a;
         }
         a.add(a.root, input);
     };
 
     friend AVL &operator-=(AVL &a, int input) {
-
+        element *e = a.search(input);
+        if(e == nullptr) return a;
+        a.remove(e);
     };
 
 };
