@@ -12,7 +12,6 @@ private:
         short bal;
 
         element(int k, element* l, element* r, element* p, short b) : key(k), left(l), right(r), parent(p), bal(b) {};
-//        element(int k, element* l, element* r, element* p) : key(k), left(l), right(r), parent(p), bal(0) {};
         element(int k, element* p) : key(k), left(nullptr), right(nullptr), parent(p), bal(0) {}; // konstruktor neues Blatt
         explicit element(int k) : key(k), left(nullptr), right(nullptr), parent(nullptr), bal(0){}; // konstruktor, wenn erstes Element
     };
@@ -312,9 +311,7 @@ private:
             if(isLeftFollower) e->left->parent = p;
             else e->right->parent = p;
             free(e);
-//            p->bal--;
             upout(isLeftParent ? p->left : p->right);
-//            calcBal(p);
         }
     };
 
@@ -323,15 +320,8 @@ private:
     };
 
     bool checkBalance(element* e) {
-
-        auto b = static_cast<short>((e->right == nullptr ? 0 : countHeight(e->right) + 1) - (e->left == nullptr ? 0 : countHeight(e->left) + 1));
-
-        bool x = e->bal == b;
-        bool y = e->right == nullptr ? true : checkBalance(e->right);
-        bool z = e->left == nullptr ? true : checkBalance(e->left);
-
-
-        return x && y && z;
+        return (e->bal == static_cast<short>((e->right == nullptr ? 0 : countHeight(e->right) + 1) - (e->left == nullptr ? 0 : countHeight(e->left) + 1)))
+               && (e->right == nullptr ? true : checkBalance(e->right)) && (e->left == nullptr ? true : checkBalance(e->left));
     }
 
 
