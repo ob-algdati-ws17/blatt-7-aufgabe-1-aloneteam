@@ -11,7 +11,8 @@ private:
         element* parent;
         short bal;
 
-        element(int k, element* l, element* r, element* p) : key(k), left(l), right(r), parent(p), bal(0) {};
+        element(int k, element* l, element* r, element* p, short b) : key(k), left(l), right(r), parent(p), bal(b) {};
+//        element(int k, element* l, element* r, element* p) : key(k), left(l), right(r), parent(p), bal(0) {};
         element(int k, element* p) : key(k), left(nullptr), right(nullptr), parent(p), bal(0) {}; // konstruktor neues Blatt
         explicit element(int k) : key(k), left(nullptr), right(nullptr), parent(nullptr), bal(0){}; // konstruktor, wenn erstes Element
     };
@@ -20,12 +21,10 @@ private:
 
     void upin(element* p) {
         if(p == root) return;
-
         if(p->bal != -1 && p->bal != 1) {
             std::cout << "Element (bal) ist nicht 1 oder -1. " << p->bal << "," << p->key << std::endl;
             return;
         }
-
         element *pp = p->parent;
         if(pp->left == p) {
             if(pp->bal == 1) {
@@ -79,11 +78,8 @@ private:
     };
 
     void upout(element *p) {
-
         if(p == root) return;
-
         element *pp = p->parent;
-
         if(p->bal != 0) {
             std::cout << "Element (bal) ist nicht 0. " << p->bal << "," << p->key << std::endl;
             return;
@@ -91,7 +87,6 @@ private:
 
         bool isLeft = pp->left == p;
         element *q = isLeft ? pp->right : pp->left;
-
         if(isLeft) {
             if(pp->bal == -1) {
                 pp->bal = 0;
@@ -148,10 +143,8 @@ private:
                 upout(pp->parent);
                 return;
             }
-            //q->bal = -1
             L(q);
             R(pp);
-
             element *ppp = pp->parent;
             calcBal(pp);
             ppp->bal = 0;
@@ -172,11 +165,9 @@ private:
             else e->parent->right = o;
             o->parent = e->parent;
         }
-
         element *tmp = o->left;
         o->left = e;
         e->parent = o;
-
         e->right = tmp;
         if(tmp != nullptr) tmp->parent = e;
     };
@@ -201,8 +192,6 @@ private:
         if(tmp != nullptr) tmp->parent = e;
     };
 
-
-
     void add(element* e, int key) {
         if(e->key == key) return; // duplicate entry
         element *target = key < e->key ? e->left : e->right;
@@ -226,17 +215,19 @@ private:
     };
 
     void remove(element *e) {
-        // Was ist wenn e == root?
         if(e->left != nullptr && e->right != nullptr) { // 2 Knoten
             element *q = getMin(e->right);
-            element *n = new AVL::element(q->key, e->left, e->right, e->parent);
-            if(e != root)  e->parent->left == e ? e->parent->left : e->parent->right = n;
+            auto *n = new AVL::element(q->key, e->left, e->right, e->parent, e->bal);
+            if(e != root)  {
+                if(e->parent->left == e) e->parent->left = n;
+                else e->parent->right = n;
+            }
             else root = n;
             e->right->parent = n;
             e->left->parent = n;
-            calcBal(n);
-            free(e);
+
             remove(q);
+            free(e);
             return;
         }
         else if(e->left == nullptr && e->right == nullptr) { // 2 Blätter
@@ -261,15 +252,14 @@ private:
                     return;
                 }
                 default: { // case 2
-                    if(isLeft) { // links wurde entfernt
+                    if (isLeft) { // links wurde entfernt
                         element *q = p->right;
                         if (q->right == nullptr) { // case 2
                             R(q);
                             L(p);
                             p->bal = 0;
                             q->bal = 0;
-//                            p->parent->bal = 0;
-                            upout(p->parent); // stimmt p??? oder p->parent
+                            upout(p->parent);
                             return;
                         }
                         if (q->left == nullptr) {
@@ -284,29 +274,26 @@ private:
                         q->bal = -1;
                         return;
                     }
-                    else { // Testen ob das so richtig ist
-                        element *q = p->left;
-                        if (q->left == nullptr) { // case 2
-                            L(q);
-                            R(p);
-                            p->bal = 0;
-                            q->bal = 0;
-//                            p->parent->bal = 0;
-                            upout(p->parent);
-                            return;
-                        }
-                        if (q->right == nullptr) {
-                            R(p);
-                            q->bal = 0;
-                            p->bal = 0;
-                            upout(q);
-                            return;
-                        }
+                    element *q = p->left;
+                    if (q->left == nullptr) { // case 2
+                        L(q);
                         R(p);
-                        p->bal = -1;
-                        q->bal = 1;
+                        p->bal = 0;
+                        q->bal = 0;
+                        upout(p->parent);
                         return;
                     }
+                    if (q->right == nullptr) {
+                        R(p);
+                        q->bal = 0;
+                        p->bal = 0;
+                        upout(q);
+                        return;
+                    }
+                    R(p);
+                    p->bal = -1;
+                    q->bal = 1;
+                    return;
                 }
             }
         }
@@ -324,13 +311,11 @@ private:
             else p->right = isLeftFollower ? e->left : e->right;
             if(isLeftFollower) e->left->parent = p;
             else e->right->parent = p;
-//            isLeftParent ? p->left : p->right = isLeftFollower ? e->left : e->right;
-//            isLeftFollower ? e->left->parent : e->right->parent = p;
             free(e);
-            calcBal(p);
-            upout(p);
+//            p->bal--;
+            upout(isLeftParent ? p->left : p->right);
+//            calcBal(p);
         }
-
     };
 
     int countHeight(element* e) {
@@ -338,37 +323,28 @@ private:
     };
 
     bool checkBalance(element* e) {
-        return e->bal == static_cast<short>((e->right == nullptr ? 0 : countHeight(e->right) + 1) - (e->left == nullptr ? 0 : countHeight(e->left) + 1)) &&
-               e->right == nullptr ? true : checkBalance(e->right) && e->left == nullptr ? true : checkBalance(e->left);
+
+        auto b = static_cast<short>((e->right == nullptr ? 0 : countHeight(e->right) + 1) - (e->left == nullptr ? 0 : countHeight(e->left) + 1));
+
+        bool x = e->bal == b;
+        bool y = e->right == nullptr ? true : checkBalance(e->right);
+        bool z = e->left == nullptr ? true : checkBalance(e->left);
+
+
+        return x && y && z;
     }
 
 
 public:
     ~AVL() {
-        while(!isEmpty()) {
-//            print();
-            remove(root);
-        }
+        while(!isEmpty()) remove(root);
     };
 
-    element* getElement(const int line, const int elem) { // 2, 1
-
-        int elemnotconst = elem;
-        int numberofelemsinlastline = static_cast<int>(pow(2, line));// bei 0: 1
-
+    element* getElement(const int line, int elem) {
         element *current = root;
-        for(int i = 0; i < line; i++) {
-            numberofelemsinlastline /= 2;
-            if(elemnotconst < numberofelemsinlastline) {
-                current = current->left;
-            }
-            else {
-                elemnotconst -= numberofelemsinlastline;
-                current = current->right;
-            }
-        }
+        for(int num = static_cast<int>(pow(2, line)) / 2, i = 0; i < line; i++, current = elem < num ? current->left : current->right, elem %= num, num /= 2) {}
         return current;
-    }
+    };
 
     void print() {
         using namespace std;
@@ -409,7 +385,8 @@ public:
 
     bool checkBalance() {
         if(root == nullptr) return true;
-        return checkBalance(root);
+        bool x = checkBalance(root);
+        return x;
     }
 
     element* search(const int key) {
@@ -432,5 +409,4 @@ public:
         if(e == nullptr) return a;
         a.remove(e);
     };
-
 };

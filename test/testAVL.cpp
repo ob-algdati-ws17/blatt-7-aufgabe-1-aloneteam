@@ -1,5 +1,4 @@
 #include "testAVL.h"
-#include <memory>
 
 using namespace std;
 
@@ -7,9 +6,19 @@ TEST(AVLTest, Test_Nothing) {
     EXPECT_TRUE(true);
 }
 
-TEST(AVLTest, Test_OneElement) {
+TEST(AVLTest, Test_Empty) {
     AVL avl;
+    EXPECT_TRUE(avl.isEmpty());
+    avl += 0;
+    EXPECT_FALSE(avl.isEmpty());
+    avl -= 0;
+    EXPECT_TRUE(avl.isEmpty());
+}
 
+#define COMPARE(X, Y, Z) EXPECT_EQ(avl.getElement((X), (Y))->key, Z)
+
+TEST(AVLTest, Test_Insert) {
+    AVL avl;
     avl += 21;
     avl += 26;
     avl += 30;
@@ -24,35 +33,110 @@ TEST(AVLTest, Test_OneElement) {
     avl += 3;
     avl += 7;
 
-//    int c[13] = {14, 4, 21, 3, 9 ,15, 28, 2, /*nullptr,*/ 7, 10, /*nullptr,*/ 18, 26, 30};
-//    int i = 0;
+    COMPARE(0, 0, 14);
+    COMPARE(1, 0 , 4);
+    COMPARE(1, 1, 21);
+    COMPARE(2, 0, 3);
+    COMPARE(2, 1, 9);
+    COMPARE(2, 2, 15);
+    COMPARE(2, 3, 28);
+    COMPARE(3, 0, 2);
+    COMPARE(3, 2, 7);
+    COMPARE(3, 3, 10);
+    COMPARE(3, 5, 18);
+    COMPARE(3, 6, 26);
+    COMPARE(3, 7, 30);
 
-    EXPECT_EQ(avl.getElement(0,0)->key, 14);
-    EXPECT_EQ(avl.getElement(1,0)->key, 4);
-    EXPECT_EQ(avl.getElement(1,1)->key, 21);
-    EXPECT_EQ(avl.getElement(2,0)->key, 3);
-    EXPECT_EQ(avl.getElement(2,1)->key, 9);
-    EXPECT_EQ(avl.getElement(2,2)->key, 15);
-//    EXPECT_EQ(avl.getElement(2,3)->key, 28);
-//    EXPECT_EQ(avl.getElement(3,0)->key, 2);
-//    EXPECT_EQ(avl.getElement(3,1)->key, nullptr);
-//    EXPECT_EQ(avl.getElement(3,2)->key, 7);
-//    EXPECT_EQ(avl.getElement(3,3)->key, 10);
-//    EXPECT_EQ(avl.getElement(3,4)->key, nullptr);
-//    EXPECT_EQ(avl.getElement(3,5)->key, 18);
-//    EXPECT_EQ(avl.getElement(3,6)->key, 26);
-//    EXPECT_EQ(avl.getElement(3,7)->key, 30);
-
-
-//    avl -= 30;
-//    avl -= 7;
-//    avl -= 2;
-//    avl -= 10;
-//    avl -= 26;
-//    avl -= 3;
-//    avl -= 9;
-//    avl -= 15;
     EXPECT_TRUE(avl.checkBalance());
-    avl.print();
-    EXPECT_TRUE(true);
+}
+
+TEST(AVLTest, Test_remove) {
+    AVL avl;
+    avl += 21;
+    avl += 26;
+    avl += 30;
+    avl += 9;
+    avl += 4;
+    avl += 14;
+    avl += 28;
+
+    avl -= 26;
+    avl -= 21;
+    avl -= 9;
+
+    COMPARE(0, 0, 28);
+    COMPARE(1, 0, 14);
+    COMPARE(1, 1, 30);
+    COMPARE(2, 0, 4);
+    EXPECT_TRUE(avl.checkBalance());
+}
+
+TEST(AVLTest, Test_duplicate) {
+    AVL avl;
+    avl += 21;
+    avl += 26;
+    avl += 30;
+    avl += 9;
+    avl += 4;
+
+    COMPARE(0, 0, 26);
+    COMPARE(1, 0, 9);
+    COMPARE(1, 1, 30);
+    COMPARE(2, 0, 4);
+    COMPARE(2, 1, 21);
+    EXPECT_TRUE(avl.checkBalance());
+
+    avl += 21;
+    avl += 26;
+    avl += 30;
+    avl += 9;
+    avl += 4;
+
+    COMPARE(0, 0, 26);
+    COMPARE(1, 0, 9);
+    COMPARE(1, 1, 30);
+    COMPARE(2, 0, 4);
+    COMPARE(2, 1, 21);
+    EXPECT_TRUE(avl.checkBalance());
+}
+
+TEST(AVLTest, Test_checkBalance) {
+    AVL avl;
+    avl += 21;
+    avl += 26;
+    avl += 30;
+    avl += 9;
+    avl += 4;
+    EXPECT_TRUE(avl.checkBalance());
+
+    avl.getElement(1, 1)->bal = 1;
+    EXPECT_FALSE(avl.checkBalance());
+    avl.getElement(1, 1)->bal = 0;
+}
+
+TEST(AVLTest, Test_removeNotFound) {
+    AVL avl;
+    avl += 21;
+    avl += 26;
+    avl += 30;
+    avl += 9;
+    avl += 4;
+
+    COMPARE(0, 0, 26);
+    COMPARE(1, 0, 9);
+    COMPARE(1, 1, 30);
+    COMPARE(2, 0, 4);
+    COMPARE(2, 1, 21);
+    EXPECT_TRUE(avl.checkBalance());
+
+    avl -= 15;
+    avl -= 0;
+    avl -= 8;
+
+    COMPARE(0, 0, 26);
+    COMPARE(1, 0, 9);
+    COMPARE(1, 1, 30);
+    COMPARE(2, 0, 4);
+    COMPARE(2, 1, 21);
+    EXPECT_TRUE(avl.checkBalance());
 }
