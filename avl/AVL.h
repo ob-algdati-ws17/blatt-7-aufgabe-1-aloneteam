@@ -1,3 +1,6 @@
+#ifndef INJECTOR_CLASS
+#define INJECTOR_CLASS
+
 #define calcBal(X) (X)->bal = static_cast<short>((X)->right == nullptr ? (X)->left == nullptr ? 0 : -1 : (X)->left == nullptr ? 1 : 0);
 #define max(X, Y)  ((X) > (Y) ? (X) : (Y))
 
@@ -54,3 +57,5 @@ public:
 
     friend AVL &operator-=(AVL &a, int input);
 };
+
+#endif

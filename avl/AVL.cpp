@@ -1,18 +1,17 @@
 #include "AVL.h"
-
+#include <iostream>
 
 AVL::~AVL() {
     while(!isEmpty()) remove(root);
 };
 
-element* AVL::getElement(const int line, int elem) {
+AVL::element* AVL::getElement(const int line, int elem) {
     element *current = root;
     for(int num = 1 << line - 1; num >= 1; current = elem < num ? current->left : current->right, elem &= num - 1, num >>= 1) {}
     return current;
 };
 
 void AVL::print() {
-    using namespace std;
     element *c[500];
     c[0] = root;
     int count = 1;
@@ -22,25 +21,25 @@ void AVL::print() {
         int countnptr = 0;
         for (int i = 0; i < count; i++) {
             if (c[i] == nullptr) {
-                cout << " -";
+                std::cout << " -";
                 tmpc[counttmpc++] = nullptr;
                 tmpc[counttmpc++] = nullptr;
                 countnptr += 2;
             } else {
-                cout << " " << c[i]->key << "'" << c[i]->bal;
+                std::cout << " " << c[i]->key << "'" << c[i]->bal;
                 tmpc[counttmpc++] = c[i]->left;
                 tmpc[counttmpc++] = c[i]->right;
             }
         }
         if (counttmpc == countnptr) {
-            cout << endl;
+            std::cout << std::endl;
             break;
         }
         for (int i = 0; i < counttmpc; i++) {
             c[i] = tmpc[i];
         }
         count = counttmpc;
-        cout << endl;
+        std::cout << std::endl;
     }
 };
 
@@ -54,14 +53,14 @@ bool AVL::checkBalance() {
     return x;
 }
 
-element* AVL::search(const int key) {
+AVL::element* AVL::search(const int key) {
     if(root == nullptr) return nullptr;
     element *next = root;
     for(element *current = next; next != nullptr && next->key != key; next = (next->key > key) ? next->left : next-> right) {}
     return next;
 };
 
-friend AVL &operator+=(AVL &a, int input) {
+AVL &operator+=(AVL &a, int input) {
     if(a.root == nullptr) {
         a.root = new AVL::element(input);
         return a;
@@ -69,8 +68,8 @@ friend AVL &operator+=(AVL &a, int input) {
     a.add(a.root, input);
 };
 
-friend AVL &operator-=(AVL &a, int input) {
-    element *e = a.search(input);
+AVL &operator-=(AVL &a, int input) {
+    AVL::element *e = a.search(input);
     if(e == nullptr) return a;
     a.remove(e);
 };
@@ -266,7 +265,7 @@ void AVL::add(element* e, int key) {
     add(target, key);
 };
 
-element* AVL::getMin(element* e) {
+AVL::element* AVL::getMin(element* e) {
     return e->left == nullptr ? e : getMin(e->left);
 };
 
@@ -373,7 +372,7 @@ void AVL::remove(element *e) {
 };
 
 int AVL::countHeight(element* e) {
-    return max(e->left == nullptr ? 0 : countHeight(e->left) + 1, e->right == nullptr ? 0 : countHeight(e->right) + 1);
+    return std::max(e->left == nullptr ? 0 : countHeight(e->left) + 1, e->right == nullptr ? 0 : countHeight(e->right) + 1);
 };
 
 bool AVL::checkBalance(element* e) {
