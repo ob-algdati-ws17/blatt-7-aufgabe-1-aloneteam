@@ -332,7 +332,7 @@ public:
 
     element* getElement(const int line, int elem) {
         element *current = root;
-        for(int num = static_cast<int>(pow(2, line)) / 2, i = 0; i < line; i++, current = elem < num ? current->left : current->right, elem %= num, num /= 2) {}
+        for(int num = static_cast<int>(pow(2, line - 1)), i = 0; i < line; i++, current = elem < num ? current->left : current->right, elem &= num - 1, num >>= 1) {}
         return current;
     };
 
